@@ -1,22 +1,37 @@
 package ru.dmitreev.telegram.bot.steptracker.repo;
 
-public class TextMessage {
+public enum TextMessage {
 
-    public static String MENU_TEXT = "Приветствую, что вы хотите сделать? \n" +
+    MENU_TEXT("Приветствую, что вы хотите сделать? \n" +
             "1 - Ввести количество шагов за определённый день \n" +
             "2 - Напечатать статистику за определённый месяц \n" +
             "3 - Изменить цель по количеству шагов в день \n" +
-            "0 - Получить информацию о использовании бота";
+            "0 - Получить информацию о использовании бота"),
 
-    public static String HELP_TEXT = "Чтобы использовать данного бота нужно учесть : \n" +
+    HELP_TEXT("Чтобы использовать данного бота нужно учесть : \n" +
             " - Цель шагов не может быть отрицательной \n" +
             " - Количество шагов не может быть отрицательным \n" +
             " - Количество дней в месяце варьируется строго от 1 до 30 \n\n" +
-            "Нажмите /menu чтобы вернуться к главному меню";
+            "Нажмите /menu чтобы вернуться к главному меню"),
 
-    public static String ONE_BUTTON = "Вы нажали кнопку - 1";
-    public static String TWO_BUTTON = "Вы нажали кнопку - 2";
-    public static String THREE_BUTTON = "Вы нажали кнопку - 3";
-    public static String ZERO_BUTTON = "Вы нажали кнопку - 0";
+    ONE_BUTTON("Вы нажали кнопку - 1"),
+    TWO_BUTTON("Вы нажали кнопку - 2"),
+    THREE_BUTTON("Вы нажали кнопку - 3"),
+    ZERO_BUTTON("Вы нажали кнопку - 0"),
+    CHOOSE_MONTH("За какой месяц вы хотите ввести шаги? \n" +
+            "Введите номер месяца в формате : \n" +
+            " 1-Январь, 2-Февраль, 3-Март, 4-Апрель, 5-Май, 6-Июнь, \n" +
+            " 7-Июль, 8-Август, 9-Сентябрь, 10-Октябрь, 11-Ноябрь, 12-Декабрь."),
 
+    NO_SUCH_COMMAND("Извините, такой команды пока нет.");
+
+    private final String message;
+
+    TextMessage(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
 }
