@@ -27,10 +27,13 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Value("${bot.name}")
     private String botName;
 
+    private int[][] monthToData;
+
     StepTracker stepTracker = new StepTracker();
 
     TelegramBot(TelegramBotConfig config) {
         this.config = config;
+        monthToData = new int[12][30];
     }
 
     @Override
@@ -98,7 +101,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 printMenu(chatId);
                 break;
             case "Вы нажали кнопку - 1":
-                saveSteps(chatId);
+                selectMonthToSaveSteps(chatId);
+                selectDayToSaveSteps(chatId);
                 break;
             case "Вы нажали кнопку - 2":
                 stepTracker.statistics();
@@ -114,7 +118,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void saveSteps(long chatId) {
+    private void selectMonthToSaveSteps(long chatId) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
         InlineKeyboardButton[] buttons = new InlineKeyboardButton[13];
@@ -145,11 +149,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         inlineKeyboardMarkup.setKeyboard(rowList);
         sendMessageWithKeyboard(chatId, CHOOSE_MONTH.getMessage(), inlineKeyboardMarkup);
 
-//            System.out.println("За какой день вы хотите ввести шаги?");
-//            System.out.println("Введите день в котором хотите сохранить количество шагов (от 1 до 30) :");
-//            int day = this.scanner.nextInt() - 1;
-//            if (day < 0 || day > 29) {
-//                System.out.println("Значение не корректно, введите число от 1 до 30.");
 //            } else {
 //                System.out.println("Введите пройденное количество шагов за день:");
 //                int steps = this.scanner.nextInt();
@@ -161,6 +160,54 @@ public class TelegramBot extends TelegramLongPollingBot {
 //                }
 //            }
 //        }
+    }
+
+    private void selectDayToSaveSteps(long chatId) {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+
+        InlineKeyboardButton[] buttons = new InlineKeyboardButton[31];
+
+        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
+        List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
+        List<InlineKeyboardButton> keyboardButtonsRow3 = new ArrayList<>();
+        List<InlineKeyboardButton> keyboardButtonsRow4 = new ArrayList<>();
+
+        for (int i = 1; i < 31; i++) {
+            buttons[i] = new InlineKeyboardButton("i");
+        }
+
+        for (int j = 1; j < 9; j++) {
+            buttons[j].setText(String.valueOf(j));
+            buttons[j].setCallbackData(String.valueOf(j));
+            keyboardButtonsRow1.add(buttons[j]);
+        }
+
+        for (int j = 8; j < 17; j++) {
+            buttons[j].setText(String.valueOf(j));
+            buttons[j].setCallbackData(String.valueOf(j));
+            keyboardButtonsRow2.add(buttons[j]);
+        }
+
+        for (int j = 16; j < 25; j++) {
+            buttons[j].setText(String.valueOf(j));
+            buttons[j].setCallbackData(String.valueOf(j));
+            keyboardButtonsRow3.add(buttons[j]);
+        }
+
+        for (int j = 24; j < 31; j++) {
+            buttons[j].setText(String.valueOf(j));
+            buttons[j].setCallbackData(String.valueOf(j));
+            keyboardButtonsRow4.add(buttons[j]);
+        }
+
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        rowList.add(keyboardButtonsRow1);
+        rowList.add(keyboardButtonsRow2);
+        rowList.add(keyboardButtonsRow3);
+        rowList.add(keyboardButtonsRow4);
+
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        sendMessageWithKeyboard(chatId, CHOOSE_DAY.getMessage(), inlineKeyboardMarkup);
     }
 
     private void sendMessage(long chatId, String textToSend) {
