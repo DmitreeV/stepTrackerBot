@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -27,7 +28,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Value("${bot.name}")
     private String botName;
 
+    int month = 0;
+    int day;
+    int steps;
+
+    private int purposeSteps = 10000;
     private int[][] monthToData;
+
+    private Converter converter = new Converter();
 
     StepTracker stepTracker = new StepTracker();
 
@@ -52,12 +60,42 @@ public class TelegramBot extends TelegramLongPollingBot {
             String message = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
             parseMessage(message, chatId);
+            saveSteps(chatId, message);
 
         } else if (update.hasCallbackQuery()) {
             long chatId = update.getCallbackQuery().getMessage().getChatId();
+            long messageId = update.getCallbackQuery().getMessage().getMessageId();
             String message = update.getCallbackQuery().getData();
             sendMessage(chatId, message);
             parseMessage(message, chatId);
+            saveMonthAndDay(chatId, messageId, message);
+        }
+    }
+
+    private void saveMonthAndDay(long chatId, long messageId, String message) {
+        for (int i = 1; i < 13; i++) {
+            if (message.equals("Выбран месяц " + i)) {
+                month = i;
+                selectDay(chatId, messageId);
+            }
+        }
+
+        for (int i = 1; i < 31; i++) {
+            if (message.equals("Выбран день " + i)) {
+                day = i;
+                sendMessage(chatId, ENTERING_STEPS.getMessage());
+            }
+        }
+    }
+
+    private void saveSteps(long chatId, String message) {
+        for (int i = 1; i < 100000; i++) {
+            if (message.equals(i + " шагов")) {
+                steps = i;
+                sendMessage(chatId, "Выбран месяц " + (month + 1) + ". День " + (day + 1) + ". Количество шагов " + steps + ". \n\n" +
+                        "Нажмите /menu чтобы вернуться в главное меню.");
+                monthToData[month][day] = steps;
+            }
         }
     }
 
@@ -101,11 +139,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                 printMenu(chatId);
                 break;
             case "Вы нажали кнопку - 1":
-                selectMonthToSaveSteps(chatId);
-                selectDayToSaveSteps(chatId);
+                selectMonth(chatId, CHOOSE_MONTH.getMessage());
                 break;
             case "Вы нажали кнопку - 2":
-                stepTracker.statistics();
+                statistics(chatId);
                 break;
             case "Вы нажали кнопку - 3":
                 stepTracker.newPurposeSteps();
@@ -114,11 +151,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendMessage(chatId, HELP_TEXT.getMessage());
                 break;
             default:
-                sendMessage(chatId, NO_SUCH_COMMAND.getMessage());
+                //sendMessage(chatId, NO_SUCH_COMMAND.getMessage());
         }
     }
 
-    private void selectMonthToSaveSteps(long chatId) {
+    private void selectMonth(long chatId, String text) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
         InlineKeyboardButton[] buttons = new InlineKeyboardButton[13];
@@ -132,13 +169,13 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (int j = 1; j < 7; j++) {
             buttons[j].setText(String.valueOf(j));
-            buttons[j].setCallbackData(String.valueOf(j));
+            buttons[j].setCallbackData("Выбран месяц " + j);
             keyboardButtonsRow1.add(buttons[j]);
         }
 
         for (int j = 7; j < 13; j++) {
             buttons[j].setText(String.valueOf(j));
-            buttons[j].setCallbackData(String.valueOf(j));
+            buttons[j].setCallbackData("Выбран месяц " + j);
             keyboardButtonsRow2.add(buttons[j]);
         }
 
@@ -147,22 +184,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         rowList.add(keyboardButtonsRow2);
 
         inlineKeyboardMarkup.setKeyboard(rowList);
-        sendMessageWithKeyboard(chatId, CHOOSE_MONTH.getMessage(), inlineKeyboardMarkup);
-
-//            } else {
-//                System.out.println("Введите пройденное количество шагов за день:");
-//                int steps = this.scanner.nextInt();
-//                if (steps < 0) {
-//                    System.out.println("Количество шагов не может быть отрицательным .");
-//                } else {
-//                    System.out.println("Выбран месяц " + (month + 1) + ". День " + (day + 1) + ". Количество шагов " + steps + ".");
-//                    monthToData[month][day] = steps;
-//                }
-//            }
-//        }
+        sendMessageWithKeyboard(chatId, text, inlineKeyboardMarkup);
     }
 
-    private void selectDayToSaveSteps(long chatId) {
+    private void selectDay(long chatId, long messageId) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
         InlineKeyboardButton[] buttons = new InlineKeyboardButton[31];
@@ -178,25 +203,25 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (int j = 1; j < 9; j++) {
             buttons[j].setText(String.valueOf(j));
-            buttons[j].setCallbackData(String.valueOf(j));
+            buttons[j].setCallbackData("Выбран день " + j);
             keyboardButtonsRow1.add(buttons[j]);
         }
 
         for (int j = 8; j < 17; j++) {
             buttons[j].setText(String.valueOf(j));
-            buttons[j].setCallbackData(String.valueOf(j));
+            buttons[j].setCallbackData("Выбран день " + j);
             keyboardButtonsRow2.add(buttons[j]);
         }
 
         for (int j = 16; j < 25; j++) {
             buttons[j].setText(String.valueOf(j));
-            buttons[j].setCallbackData(String.valueOf(j));
+            buttons[j].setCallbackData("Выбран день " + j);
             keyboardButtonsRow3.add(buttons[j]);
         }
 
         for (int j = 24; j < 31; j++) {
             buttons[j].setText(String.valueOf(j));
-            buttons[j].setCallbackData(String.valueOf(j));
+            buttons[j].setCallbackData("Выбран день " + j);
             keyboardButtonsRow4.add(buttons[j]);
         }
 
@@ -207,7 +232,38 @@ public class TelegramBot extends TelegramLongPollingBot {
         rowList.add(keyboardButtonsRow4);
 
         inlineKeyboardMarkup.setKeyboard(rowList);
-        sendMessageWithKeyboard(chatId, CHOOSE_DAY.getMessage(), inlineKeyboardMarkup);
+        executeEditMessageText(CHOOSE_DAY.getMessage(), chatId, messageId, inlineKeyboardMarkup);
+    }
+
+    private void statistics(long chatId) {
+        int sum = 0;
+        int maxSteps = 0;
+        int count = 0;
+        int maxSeries = 0;
+
+        selectMonth(chatId, STATS_FOR_MONTH.getMessage());
+        for (int i = 0; i < 30; i++) {
+
+            sum += monthToData[month][i];
+
+            if (monthToData[month][i] > maxSteps) {
+                maxSteps = monthToData[month][i];
+            }
+            if (monthToData[month][i] >= purposeSteps) {
+                count++;
+                if (count > maxSeries) {
+                    maxSeries = count;
+                }
+            } else {
+                count = 0;
+            }
+        }
+        sendMessage(chatId, "Общее количество шагов за месяц: " + sum);
+        sendMessage(chatId, "Максимальное количество шагов: " + maxSteps + ".");
+        sendMessage(chatId, "Среднее количество шагов за месяц: " + (sum / 30));
+        sendMessage(chatId, "Количество пройденных киллометров: " + Math.round(converter.convertInKilometres(sum)));
+        sendMessage(chatId, "Количество сожженных килокалорий: " + Math.round(converter.convertInKilokalories(sum)));
+        sendMessage(chatId, "Лучшая серия из дней превышающих целевое количество шагов " + maxSeries);
     }
 
     private void sendMessage(long chatId, String textToSend) {
@@ -225,6 +281,20 @@ public class TelegramBot extends TelegramLongPollingBot {
         message.setReplyMarkup(ikm);
 
         executeMessage(message);
+    }
+
+    private void executeEditMessageText(String text, long chatId, long messageId, InlineKeyboardMarkup ikm) {
+        EditMessageText message = new EditMessageText();
+        message.setChatId(String.valueOf(chatId));
+        message.setText(text);
+        message.setMessageId((int) messageId);
+        message.setReplyMarkup(ikm);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred:" + e.getMessage());
+        }
     }
 
     public void executeMessage(SendMessage message) {
