@@ -28,7 +28,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Value("${bot.name}")
     private String botName;
 
-    int month = 0;
+    int month;
     int day;
     int steps;
 
@@ -61,6 +61,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             long chatId = update.getMessage().getChatId();
             parseMessage(message, chatId);
             saveSteps(chatId, message);
+            saveMonthAndDay(chatId, 0, message);
 
         } else if (update.hasCallbackQuery()) {
             long chatId = update.getCallbackQuery().getMessage().getChatId();
@@ -77,6 +78,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (message.equals("Выбран месяц " + i)) {
                 month = i;
                 selectDay(chatId, messageId);
+            } else if (message.toLowerCase().equals("месяц " + i)) {
+                month = i;
+                statistics(chatId);
             }
         }
 
@@ -92,9 +96,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         for (int i = 1; i < 100000; i++) {
             if (message.equals(i + " шагов")) {
                 steps = i;
-                sendMessage(chatId, "Выбран месяц " + (month + 1) + ". День " + (day + 1) + ". Количество шагов " + steps + ". \n\n" +
-                        "Нажмите /menu чтобы вернуться в главное меню.");
+                sendMessage(chatId, "Выбран месяц " + month + ". День " + day + ". Количество шагов " + steps + ". \n\n" +
+                        "Нажмите /menu чтобы вернуться в главное меню. \n" +
+                        "Нажмите /steps чтобы добавить новые данные о шагах.");
                 monthToData[month][day] = steps;
+
+            } else if (message.toLowerCase().equals("цель " + i)) {
+                purposeSteps = i;
+                sendMessage(chatId, "Ваша новая цель шагов : " + purposeSteps + ". \n\n" +
+                        "Нажмите /menu чтобы вернуться в главное меню.");
             }
         }
     }
@@ -139,13 +149,15 @@ public class TelegramBot extends TelegramLongPollingBot {
                 printMenu(chatId);
                 break;
             case "Вы нажали кнопку - 1":
+            case "/steps":
                 selectMonth(chatId, CHOOSE_MONTH.getMessage());
                 break;
             case "Вы нажали кнопку - 2":
-                statistics(chatId);
+            case "/stats":
+                sendMessage(chatId, STATS_FOR_MONTH.getMessage());
                 break;
             case "Вы нажали кнопку - 3":
-                stepTracker.newPurposeSteps();
+                sendMessage(chatId, NEW_GOAL.getMessage());
                 break;
             case "Вы нажали кнопку - 0":
                 sendMessage(chatId, HELP_TEXT.getMessage());
@@ -241,7 +253,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         int count = 0;
         int maxSeries = 0;
 
-        selectMonth(chatId, STATS_FOR_MONTH.getMessage());
         for (int i = 0; i < 30; i++) {
 
             sum += monthToData[month][i];
@@ -258,12 +269,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 count = 0;
             }
         }
-        sendMessage(chatId, "Общее количество шагов за месяц: " + sum);
-        sendMessage(chatId, "Максимальное количество шагов: " + maxSteps + ".");
-        sendMessage(chatId, "Среднее количество шагов за месяц: " + (sum / 30));
-        sendMessage(chatId, "Количество пройденных киллометров: " + Math.round(converter.convertInKilometres(sum)));
-        sendMessage(chatId, "Количество сожженных килокалорий: " + Math.round(converter.convertInKilokalories(sum)));
-        sendMessage(chatId, "Лучшая серия из дней превышающих целевое количество шагов " + maxSeries);
+        sendMessage(chatId, "Общее количество шагов за месяц: " + sum + "\n" +
+                "Максимальное количество шагов: " + maxSteps + "\n" +
+                "Среднее количество шагов за месяц: " + (sum / 30) + "\n" +
+                "Количество пройденных киллометров: " + Math.round(converter.convertInKilometres(sum)) + "\n" +
+                "Количество сожженных килокалорий: " + Math.round(converter.convertInKilokalories(sum)) + "\n" +
+                "Лучшая серия из дней превышающих целевое количество шагов " + maxSeries + ". \n\n" +
+                "Нажмите /menu чтобы вернуться в главное меню. \n" +
+                "Нажмите /stats чтобы посмотреть статистику за другой месяц.");
     }
 
     private void sendMessage(long chatId, String textToSend) {
