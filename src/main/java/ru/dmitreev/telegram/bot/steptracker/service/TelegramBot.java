@@ -31,13 +31,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     int month;
     int day;
     int steps;
-
     private int purposeSteps = 10000;
-    private int[][] monthToData;
-
-    private Converter converter = new Converter();
-
-    StepTracker stepTracker = new StepTracker();
+    private final int[][] monthToData;
+    private final Converter converter = new Converter();
 
     TelegramBot(TelegramBotConfig config) {
         this.config = config;
@@ -70,42 +66,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendMessage(chatId, message);
             parseMessage(message, chatId);
             saveMonthAndDay(chatId, messageId, message);
-        }
-    }
-
-    private void saveMonthAndDay(long chatId, long messageId, String message) {
-        for (int i = 1; i < 13; i++) {
-            if (message.equals("Выбран месяц " + i)) {
-                month = i;
-                selectDay(chatId, messageId);
-            } else if (message.toLowerCase().equals("месяц " + i)) {
-                month = i;
-                statistics(chatId);
-            }
-        }
-
-        for (int i = 1; i < 31; i++) {
-            if (message.equals("Выбран день " + i)) {
-                day = i;
-                sendMessage(chatId, ENTERING_STEPS.getMessage());
-            }
-        }
-    }
-
-    private void saveSteps(long chatId, String message) {
-        for (int i = 1; i < 100000; i++) {
-            if (message.equals(i + " шагов")) {
-                steps = i;
-                sendMessage(chatId, "Выбран месяц " + month + ". День " + day + ". Количество шагов " + steps + ". \n\n" +
-                        "Нажмите /menu чтобы вернуться в главное меню. \n" +
-                        "Нажмите /steps чтобы добавить новые данные о шагах.");
-                monthToData[month][day] = steps;
-
-            } else if (message.toLowerCase().equals("цель " + i)) {
-                purposeSteps = i;
-                sendMessage(chatId, "Ваша новая цель шагов : " + purposeSteps + ". \n\n" +
-                        "Нажмите /menu чтобы вернуться в главное меню.");
-            }
         }
     }
 
@@ -162,8 +122,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "Вы нажали кнопку - 0":
                 sendMessage(chatId, HELP_TEXT.getMessage());
                 break;
-            default:
-                //sendMessage(chatId, NO_SUCH_COMMAND.getMessage());
         }
     }
 
@@ -247,6 +205,42 @@ public class TelegramBot extends TelegramLongPollingBot {
         executeEditMessageText(CHOOSE_DAY.getMessage(), chatId, messageId, inlineKeyboardMarkup);
     }
 
+    private void saveMonthAndDay(long chatId, long messageId, String message) {
+        for (int i = 1; i < 13; i++) {
+            if (message.equals("Выбран месяц " + i)) {
+                month = i;
+                selectDay(chatId, messageId);
+            } else if (message.toLowerCase().equals("месяц " + i)) {
+                month = i;
+                statistics(chatId);
+            }
+        }
+
+        for (int i = 1; i < 31; i++) {
+            if (message.equals("Выбран день " + i)) {
+                day = i;
+                sendMessage(chatId, ENTERING_STEPS.getMessage());
+            }
+        }
+    }
+
+    private void saveSteps(long chatId, String message) {
+        for (int i = 1; i < 100000; i++) {
+            if (message.equals(i + " шагов")) {
+                steps = i;
+                sendMessage(chatId, "Выбран месяц " + month + ". День " + day + ". Количество шагов " + steps + ". \n\n" +
+                        "Нажмите /menu чтобы вернуться в главное меню. \n" +
+                        "Нажмите /steps чтобы добавить новые данные о шагах.");
+                monthToData[month][day] = steps;
+
+            } else if (message.toLowerCase().equals("цель " + i)) {
+                purposeSteps = i;
+                sendMessage(chatId, "Ваша новая цель шагов : " + purposeSteps + ". \n\n" +
+                        "Нажмите /menu чтобы вернуться в главное меню.");
+            }
+        }
+    }
+
     private void statistics(long chatId) {
         int sum = 0;
         int maxSteps = 0;
@@ -310,7 +304,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    public void executeMessage(SendMessage message) {
+    private void executeMessage(SendMessage message) {
         try {
             execute(message);
         } catch (TelegramApiException e) {
