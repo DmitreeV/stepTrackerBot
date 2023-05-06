@@ -267,7 +267,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 "Максимальное количество шагов: " + maxSteps + "\n" +
                 "Среднее количество шагов за месяц: " + (sum / 30) + "\n" +
                 "Количество пройденных киллометров: " + Math.round(converter.convertInKilometres(sum)) + "\n" +
-                "Количество сожженных килокалорий: " + Math.round(converter.convertInKilokalories(sum)) + "\n" +
+                "Количество сожженных килокалорий: " + Math.round(converter.convertInKilocallories(sum)) + "\n" +
                 "Лучшая серия из дней превышающих целевое количество шагов " + maxSeries + ". \n\n" +
                 "Нажмите /menu чтобы вернуться в главное меню. \n" +
                 "Нажмите /stats чтобы посмотреть статистику за другой месяц.");

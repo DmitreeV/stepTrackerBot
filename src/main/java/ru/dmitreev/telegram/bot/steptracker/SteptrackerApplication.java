@@ -9,5 +9,4 @@ public class SteptrackerApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(SteptrackerApplication.class, args);
 	}
-
 }
